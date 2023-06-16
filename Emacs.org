@@ -176,107 +176,110 @@ This configuration uses [[https://evil.readthedocs.io/en/latest/index.html][evil
 
 #+begin_src emacs-lisp
 
-        ;; Make ESC quit prompts
-        (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-        (global-set-key (kbd "C-g") 'keyboard-escape-quit)
+          ;; Make ESC quit prompts
+          (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+          (global-set-key (kbd "C-g") 'keyboard-escape-quit)
 
-        (use-package general
-          :after evil
-          :config
-          (general-create-definer efs/leader-keys
-            :keymaps '(normal insert visual emacs)
-            :prefix "SPC"
-            :global-prefix "C-SPC")
+          (use-package general
+            :after evil
+            :config
+            (general-create-definer efs/leader-keys
+              :keymaps '(normal insert visual emacs)
+              :prefix "SPC"
+              :global-prefix "C-SPC")
 
-          (efs/leader-keys
-            "t"  '(:ignore t :which-key "toggles")
-            "tt" '(counsel-load-theme :which-key "choose theme")
-            "fde" '(lambda () (interactive) (find-file (expand-file-name "~/.emacs.d/Emacs.org")))))
+            (efs/leader-keys
+              "t"  '(:ignore t :which-key "toggles")
+              "tt" '(counsel-load-theme :which-key "choose theme")
+              "fde" '(lambda () (interactive) (find-file (expand-file-name "~/.emacs.d/Emacs.org")))))
 
-        (use-package evil
-          :init
-          (setq evil-want-integration t)
-          (setq evil-want-keybinding nil)
-          (setq evil-want-C-u-scroll t)
-          (setq evil-want-C-i-jump nil)
-          :config
-          (evil-mode 1)
-          ;;(define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
-          (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join)
+          (use-package evil
+            :init
+            (setq evil-want-integration t)
+            (setq evil-want-keybinding nil)
+            (setq evil-want-C-u-scroll t)
+            (setq evil-want-C-i-jump nil)
+            :config
+            (evil-mode 1)
+            ;;(define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
+            (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join)
 
-          ;; Use visual line motions even outside of visual-line-mode buffers
-          (evil-global-set-key 'motion "j" 'evil-next-visual-line)
-          (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+            ;; Use visual line motions even outside of visual-line-mode buffers
+            (evil-global-set-key 'motion "j" 'evil-next-visual-line)
+            (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
 
-          (evil-set-initial-state 'messages-buffer-mode 'normal)
-          (evil-set-initial-state 'dashboard-mode 'normal))
+            (evil-set-initial-state 'messages-buffer-mode 'normal)
+            (evil-set-initial-state 'dashboard-mode 'normal))
 
-        (use-package evil-collection
-          :after evil
-          :config
-          (evil-collection-init))
+          (use-package evil-collection
+            :after evil
+            :config
+            (evil-collection-init))
 
-      (defun my-jk ()
-        (interactive)
-        (let* ((initial-key ?j)
-               (final-key ?k)
-               (timeout 0.5)
-               (event (read-event nil nil timeout)))
-          (if event
-              ;; timeout met
-              (if (and (characterp event) (= event final-key))
-                  (evil-normal-state)
-                (insert initial-key)
-                (push event unread-command-events))
-            ;; timeout exceeded
-            (insert initial-key))))
+          (use-package evil-commentary
+             :after evil)
+          (evil-commentary-mode)
+        (defun my-jk ()
+          (interactive)
+          (let* ((initial-key ?j)
+                 (final-key ?k)
+                 (timeout 0.5)
+                 (event (read-event nil nil timeout)))
+            (if event
+                ;; timeout met
+                (if (and (characterp event) (= event final-key))
+                    (evil-normal-state)
+                  (insert initial-key)
+                  (push event unread-command-events))
+              ;; timeout exceeded
+              (insert initial-key))))
 
-      (define-key evil-insert-state-map (kbd "j") 'my-jk)
+        (define-key evil-insert-state-map (kbd "j") 'my-jk)
 
-      (defun my-kj ()
-        (interactive)
-        (let* ((initial-key ?k)
-               (final-key ?j)
-               (timeout 0.5)
-               (event (read-event nil nil timeout)))
-          (if event
-              ;; timeout met
-              (if (and (characterp event) (= event final-key))
-                  (evil-normal-state)
-                (insert initial-key)
-                (push event unread-command-events))
-            ;; timeout exceeded
-            (insert initial-key))))
+        (defun my-kj ()
+          (interactive)
+          (let* ((initial-key ?k)
+                 (final-key ?j)
+                 (timeout 0.5)
+                 (event (read-event nil nil timeout)))
+            (if event
+                ;; timeout met
+                (if (and (characterp event) (= event final-key))
+                    (evil-normal-state)
+                  (insert initial-key)
+                  (push event unread-command-events))
+              ;; timeout exceeded
+              (insert initial-key))))
 
-      (define-key evil-insert-state-map (kbd "k") 'my-kj)
-
-  
-  (use-package evil-surround
-    :ensure t
-    :config
-    (global-evil-surround-mode 1))
+        (define-key evil-insert-state-map (kbd "k") 'my-kj)
 
 
-    ;; keybindings for switching and resizing windows and buffers
-    (global-set-key (kbd "M-h") 'evil-window-left)
-    (global-set-key (kbd "M-l") 'evil-window-right)
-    (global-set-key (kbd "M-k") 'evil-window-up)
-    (global-set-key (kbd "M-j") 'evil-window-down)
-
-    (global-set-key (kbd "C-S-k") 'evil-window-increase-height)
-    (global-set-key (kbd "C-S-j") 'evil-window-decrease-height)
-    (global-set-key (kbd "C-S-l") 'evil-window-increase-width)
-    (global-set-key (kbd "C-S-h") 'evil-window-decrease-width)
-
-    (global-set-key (kbd "M-H") '+evil/window-move-left)
-    (global-set-key (kbd "M-L") '+evil/window-move-right)
-    (global-set-key (kbd "M-K") '+evil/window-move-up)
-    (global-set-key (kbd "M-J") '+evil/window-move-down)
+    (use-package evil-surround
+      :ensure t
+      :config
+      (global-evil-surround-mode 1))
 
 
-    (define-key evil-normal-state-map (kbd "L") 'next-buffer)
-    (define-key evil-normal-state-map (kbd "H") 'previous-buffer)
-(use-package fzf)
+      ;; keybindings for switching and resizing windows and buffers
+      (global-set-key (kbd "M-h") 'evil-window-left)
+      (global-set-key (kbd "M-l") 'evil-window-right)
+      (global-set-key (kbd "M-k") 'evil-window-up)
+      (global-set-key (kbd "M-j") 'evil-window-down)
+
+      (global-set-key (kbd "C-S-k") 'evil-window-increase-height)
+      (global-set-key (kbd "C-S-j") 'evil-window-decrease-height)
+      (global-set-key (kbd "C-S-l") 'evil-window-increase-width)
+      (global-set-key (kbd "C-S-h") 'evil-window-decrease-width)
+
+      (global-set-key (kbd "M-H") '+evil/window-move-left)
+      (global-set-key (kbd "M-L") '+evil/window-move-right)
+      (global-set-key (kbd "M-K") '+evil/window-move-up)
+      (global-set-key (kbd "M-J") '+evil/window-move-down)
+
+
+      (define-key evil-normal-state-map (kbd "L") 'next-buffer)
+      (define-key evil-normal-state-map (kbd "H") 'previous-buffer)
+  (use-package fzf)
 #+end_src
 
 * UI Configuration
@@ -299,7 +302,7 @@ This configuration uses [[https://evil.readthedocs.io/en/latest/index.html][evil
 #+begin_src emacs-lisp
 
 (use-package doom-themes
-  :init (load-theme 'doom-palenight t))
+  :init (load-theme 'wombat t))
 
 #+end_src
 
@@ -319,6 +322,16 @@ This configuration uses [[https://evil.readthedocs.io/en/latest/index.html][evil
 
 #+end_src
 
+** Dashboard
+Dashboard for emacs
+
+#+begin_src emacs-lisp
+ (use-package dashboard
+  :ensure t
+  :config
+  (dashboard-setup-startup-hook))
+#+end_src
+
 ** Which Key
 
 [[https://github.com/justbur/emacs-which-key][which-key]] is a useful UI panel that appears when you start pressing any key binding in Emacs to offer you all possible completions for the prefix.  For example, if you press =C-c= (hold control and press the letter =c=), a panel will appear at the bottom of the frame displaying all of the bindings under that prefix and which command they run.  This is very useful for learning the possible key bindings in the mode of your current buffer.
@@ -333,7 +346,7 @@ This configuration uses [[https://evil.readthedocs.io/en/latest/index.html][evil
     (setq which-key-idle-delay 1))
 
 #+end_src
-
+ 
 ** Ivy and Counsel
 
 [[https://oremacs.com/swiper/][Ivy]] is an excellent completion framework for Emacs.  It provides a minimal yet powerful selection menu that appears when you open files, switch buffers, and for many other tasks in Emacs.  Counsel is a customized set of commands to replace `find-file` with `counsel-find-file`, etc which provide useful commands for each of the default completion commands.
@@ -459,7 +472,7 @@ The =efs/org-font-setup= function configures various text faces to tweak the siz
                     (org-level-6 . 1.1)
                     (org-level-7 . 1.1)
                     (org-level-8 . 1.1)))
-      (set-face-attribute (car face) nil :font "Cantarell" :weight 'regular :height (cdr face)))
+      (set-face-attribute (car face) nil :font "JetBrainsMono Nerd Font" :weight 'regular :height (cdr face)))
 
     ;; Ensure that anything that should be fixed-pitch in Org files appears that way
     (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
@@ -498,10 +511,10 @@ This section contains the basic configuration for =org-mode= plus the configurat
     (setq org-log-done 'time)
     (setq org-log-into-drawer t)
 
-    (setq org-agenda-files
-          '("~/Projects/Code/emacs-from-scratch/OrgFiles/Tasks.org"
-            "~/Projects/Code/emacs-from-scratch/OrgFiles/Habits.org"
-            "~/Projects/Code/emacs-from-scratch/OrgFiles/Birthdays.org"))
+    ;; (setq org-agenda-files
+    ;;       '("~/Projects/Code/emacs-from-scratch/OrgFiles/Tasks.org"
+    ;;         "~/Projects/Code/emacs-from-scratch/OrgFiles/Habits.org"
+    ;;         "~/Projects/Code/emacs-from-scratch/OrgFiles/Birthdays.org"))
 
     (require 'org-habit)
     (add-to-list 'org-modules 'org-habit)
@@ -776,6 +789,7 @@ Try these commands with =M-x=:
 
 #+end_src
 
+
 *** Debugging with dap-mode
 
 [[https://emacs-lsp.github.io/dap-mode/][dap-mode]] is an excellent package for bringing rich debugging capabilities to Emacs via the [[https://microsoft.github.io/debug-adapter-protocol/][Debug Adapter Protocol]].  You should check out the [[https://emacs-lsp.github.io/dap-mode/page/configuration/][configuration docs]] to learn how to configure the debugger for your language.  Also make sure to check out the documentation for the debug adapter to see what configuration parameters are available to use for your debug templates!
@@ -956,6 +970,14 @@ Emacs' built in commenting functionality =comment-dwim= (usually bound to =M-;=)
 
 #+end_src
 
+** Treesitter
+#+begin_src emacs-lisp
+  (use-package tree-sitter) 
+  (use-package tree-sitter-langs) 
+  (require 'tree-sitter)
+  (require 'tree-sitter-langs)
+  (global-tree-sitter-mode)
+#+end_src
 * Terminals
 
 ** term-mode

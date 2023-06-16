@@ -137,6 +137,9 @@
           :config
           (evil-collection-init))
 
+        (use-package evil-commentary
+           :after evil)
+        (evil-commentary-mode)
       (defun my-jk ()
         (interactive)
         (let* ((initial-key ?j)
@@ -171,7 +174,7 @@
 
       (define-key evil-insert-state-map (kbd "k") 'my-kj)
 
-  
+
   (use-package evil-surround
     :ensure t
     :config
@@ -203,13 +206,18 @@
   :commands command-log-mode)
 
 (use-package doom-themes
-  :init (load-theme 'doom-palenight t))
+  :init (load-theme 'wombat t))
 
 (use-package all-the-icons)
 
 (use-package doom-modeline
   :init (doom-modeline-mode 1)
   :custom ((doom-modeline-height 15)))
+
+(use-package dashboard
+ :ensure t
+ :config
+ (dashboard-setup-startup-hook))
 
 (use-package which-key
   :defer 0
@@ -297,7 +305,7 @@
                   (org-level-6 . 1.1)
                   (org-level-7 . 1.1)
                   (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font "Cantarell" :weight 'regular :height (cdr face)))
+    (set-face-attribute (car face) nil :font "JetBrainsMono Nerd Font" :weight 'regular :height (cdr face)))
 
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
   (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
@@ -328,10 +336,10 @@
   (setq org-log-done 'time)
   (setq org-log-into-drawer t)
 
-  (setq org-agenda-files
-        '("~/Projects/Code/emacs-from-scratch/OrgFiles/Tasks.org"
-          "~/Projects/Code/emacs-from-scratch/OrgFiles/Habits.org"
-          "~/Projects/Code/emacs-from-scratch/OrgFiles/Birthdays.org"))
+  ;; (setq org-agenda-files
+  ;;       '("~/Projects/Code/emacs-from-scratch/OrgFiles/Tasks.org"
+  ;;         "~/Projects/Code/emacs-from-scratch/OrgFiles/Habits.org"
+  ;;         "~/Projects/Code/emacs-from-scratch/OrgFiles/Birthdays.org"))
 
   (require 'org-habit)
   (add-to-list 'org-modules 'org-habit)
@@ -593,6 +601,12 @@
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
+
+(use-package tree-sitter) 
+(use-package tree-sitter-langs) 
+(require 'tree-sitter)
+(require 'tree-sitter-langs)
+(global-tree-sitter-mode)
 
 (use-package term
   :commands term
