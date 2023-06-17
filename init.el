@@ -25,32 +25,61 @@
 
 (add-hook 'emacs-startup-hook #'efs/display-startup-time)
 
-;; Initialize package sources
-(require 'package)
+(unless (featurep 'straight)
+  ;; Bootstrap straight.el
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+        (bootstrap-version 5))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage)))
 
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("org" . "https://orgmode.org/elpa/")
-                         ("elpa" . "https://elpa.gnu.org/packages/")))
+;; Use straight.el for use-package expressions
+(straight-use-package 'use-package)
+(setq straight-use-package-by-default t)
 
-(package-initialize)
-(unless package-archive-contents
-  (package-refresh-contents))
+;; ;; Initialize package sources
+;; (require 'package)
 
-  ;; Initialize use-package on non-Linux platforms
-(unless (package-installed-p 'use-package)
-  (package-install 'use-package))
+;; (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+;;                          ("org" . "https://orgmode.org/elpa/")
+;;                          ("elpa" . "https://elpa.gnu.org/packages/")))
 
-(require 'use-package)
-(setq use-package-always-ensure t)
+;; (package-initialize)
+;; (unless package-archive-contents
+;;   (package-refresh-contents))
+
+;;   ;; Initialize use-package on non-Linux platforms
+;; (unless (package-installed-p 'use-package)
+;;   (package-install 'use-package))
+
+;; (require 'use-package)
+;; (setq use-package-always-ensure t)
 
 (use-package auto-package-update
   :custom
   (auto-package-update-interval 7)
-  (auto-package-update-prompt-before-update t)
+  ;; (auto-package-update-prompt-before-update t)
   (auto-package-update-hide-results t)
   :config
   (auto-package-update-maybe)
   (auto-package-update-at-time "09:00"))
+
+(straight-use-package '(setup :type git :host nil :repo "https://git.sr.ht/~pkal/setup"))
+(require 'setup)
+
+(setup-define :delay
+   (lambda (&rest time)
+     `(run-with-idle-timer ,(or time 1)
+                           nil ;; Don't repeat
+                           (lambda () (require ',(setup-get 'feature)))))
+   :documentation "Delay loading the feature until a certain amount of idle time has passed.")
 
 ;; NOTE: If you want to move everything out of the ~/.emacs.d folder
 ;; reliably, set `user-emacs-directory` before loading no-littering!
@@ -99,6 +128,12 @@
 
 ;; Set the variable pitch face
 (set-face-attribute 'variable-pitch nil :font "JetBrainsMono Nerd Font" :height efs/default-variable-font-size :weight 'regular)
+
+(setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
+(setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
+(setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+(setq scroll-step 1) ;; keyboard scroll one line at a time
+(setq use-dialog-box nil)
 
 ;; Make ESC quit prompts
         (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
@@ -179,7 +214,7 @@
 
 
   (use-package evil-surround
-    :ensure t
+    :straight t
     :config
     (global-evil-surround-mode 1))
    (evil-set-undo-system 'undo-redo)
@@ -287,7 +322,7 @@
 (setq doom-modeline-after-update-env-hook nil)
 
 (use-package dashboard
- :ensure t
+ :straight t
  :config
  (dashboard-setup-startup-hook))
 
@@ -393,133 +428,136 @@
   (set-face-attribute 'line-number-current-line nil :inherit 'fixed-pitch))
 
 (defun efs/org-mode-setup ()
-  (org-indent-mode)
-  (variable-pitch-mode 1)
-  (visual-line-mode 1))
+    (org-indent-mode)
+    (variable-pitch-mode 1)
+    (visual-line-mode 1))
 
-(use-package org
-  :pin org
-  :commands (org-capture org-agenda)
-  :hook (org-mode . efs/org-mode-setup)
-  :config
-  (setq org-ellipsis " ▾")
+  (straight-use-package 'org)
+;; (straight-use-package '(org :type built-in))
+  ;; (use-package org
+  ;;   ;; :straight t
+  ;;   ;; :pin org
+  ;;   :commands (org-capture org-agenda)
+  ;;   :hook (org-mode . efs/org-mode-setup)
+  ;;   :config
+  ;;   (setq org-ellipsis " ▾")
 
-  (setq org-agenda-start-with-log-mode t)
-  (setq org-log-done 'time)
-  (setq org-log-into-drawer t)
+  ;;   (setq org-agenda-start-with-log-mode t)
+  ;;   (setq org-log-done 'time)
+  ;;   (setq org-log-into-drawer t))
 
-  ;; (setq org-agenda-files
-  ;;       '("~/Projects/Code/emacs-from-scratch/OrgFiles/Tasks.org"
-  ;;         "~/Projects/Code/emacs-from-scratch/OrgFiles/Habits.org"
-  ;;         "~/Projects/Code/emacs-from-scratch/OrgFiles/Birthdays.org"))
+    ;; (setq org-agenda-files
+    ;;       '("~/Projects/Code/emacs-from-scratch/OrgFiles/Tasks.org"
+    ;;         "~/Projects/Code/emacs-from-scratch/OrgFiles/Habits.org"
+    ;;         "~/Projects/Code/emacs-from-scratch/OrgFiles/Birthdays.org"))
 
-  (require 'org-habit)
-  (add-to-list 'org-modules 'org-habit)
-  (setq org-habit-graph-column 60)
+    (require 'org-habit)
+    (add-to-list 'org-modules 'org-habit)
+    (setq org-habit-graph-column 60)
 
-  (setq org-todo-keywords
-    '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
-      (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
+    (setq org-todo-keywords
+      '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+	(sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
 
-  (setq org-refile-targets
-    '(("Archive.org" :maxlevel . 1)
-      ("Tasks.org" :maxlevel . 1)))
+    (setq org-refile-targets
+      '(("Archive.org" :maxlevel . 1)
+	("Tasks.org" :maxlevel . 1)))
 
-  ;; Save Org buffers after refiling!
-  (advice-add 'org-refile :after 'org-save-all-org-buffers)
+    ;; Save Org buffers after refiling!
+    (advice-add 'org-refile :after 'org-save-all-org-buffers)
 
-  (setq org-tag-alist
-    '((:startgroup)
-       ; Put mutually exclusive tags here
-       (:endgroup)
-       ("@errand" . ?E)
-       ("@home" . ?H)
-       ("@work" . ?W)
-       ("agenda" . ?a)
-       ("planning" . ?p)
-       ("publish" . ?P)
-       ("batch" . ?b)
-       ("note" . ?n)
-       ("idea" . ?i)))
+    (setq org-tag-alist
+      '((:startgroup)
+	 ; Put mutually exclusive tags here
+	 (:endgroup)
+	 ("@errand" . ?E)
+	 ("@home" . ?H)
+	 ("@work" . ?W)
+	 ("agenda" . ?a)
+	 ("planning" . ?p)
+	 ("publish" . ?P)
+	 ("batch" . ?b)
+	 ("note" . ?n)
+	 ("idea" . ?i)))
 
-  ;; Configure custom agenda views
-  (setq org-agenda-custom-commands
-   '(("d" "Dashboard"
-     ((agenda "" ((org-deadline-warning-days 7)))
-      (todo "NEXT"
-        ((org-agenda-overriding-header "Next Tasks")))
-      (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
+    ;; Configure custom agenda views
+    (setq org-agenda-custom-commands
+     '(("d" "Dashboard"
+       ((agenda "" ((org-deadline-warning-days 7)))
+	(todo "NEXT"
+	  ((org-agenda-overriding-header "Next Tasks")))
+	(tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
 
-    ("n" "Next Tasks"
-     ((todo "NEXT"
-        ((org-agenda-overriding-header "Next Tasks")))))
+      ("n" "Next Tasks"
+       ((todo "NEXT"
+	  ((org-agenda-overriding-header "Next Tasks")))))
 
-    ("W" "Work Tasks" tags-todo "+work-email")
+      ("W" "Work Tasks" tags-todo "+work-email")
 
-    ;; Low-effort next actions
-    ("e" tags-todo "+TODO=\"NEXT\"+Effort<15&+Effort>0"
-     ((org-agenda-overriding-header "Low Effort Tasks")
-      (org-agenda-max-todos 20)
-      (org-agenda-files org-agenda-files)))
+      ;; Low-effort next actions
+      ("e" tags-todo "+TODO=\"NEXT\"+Effort<15&+Effort>0"
+       ((org-agenda-overriding-header "Low Effort Tasks")
+	(org-agenda-max-todos 20)
+	(org-agenda-files org-agenda-files)))
 
-    ("w" "Workflow Status"
-     ((todo "WAIT"
-            ((org-agenda-overriding-header "Waiting on External")
-             (org-agenda-files org-agenda-files)))
-      (todo "REVIEW"
-            ((org-agenda-overriding-header "In Review")
-             (org-agenda-files org-agenda-files)))
-      (todo "PLAN"
-            ((org-agenda-overriding-header "In Planning")
-             (org-agenda-todo-list-sublevels nil)
-             (org-agenda-files org-agenda-files)))
-      (todo "BACKLOG"
-            ((org-agenda-overriding-header "Project Backlog")
-             (org-agenda-todo-list-sublevels nil)
-             (org-agenda-files org-agenda-files)))
-      (todo "READY"
-            ((org-agenda-overriding-header "Ready for Work")
-             (org-agenda-files org-agenda-files)))
-      (todo "ACTIVE"
-            ((org-agenda-overriding-header "Active Projects")
-             (org-agenda-files org-agenda-files)))
-      (todo "COMPLETED"
-            ((org-agenda-overriding-header "Completed Projects")
-             (org-agenda-files org-agenda-files)))
-      (todo "CANC"
-            ((org-agenda-overriding-header "Cancelled Projects")
-             (org-agenda-files org-agenda-files)))))))
+      ("w" "Workflow Status"
+       ((todo "WAIT"
+	      ((org-agenda-overriding-header "Waiting on External")
+	       (org-agenda-files org-agenda-files)))
+	(todo "REVIEW"
+	      ((org-agenda-overriding-header "In Review")
+	       (org-agenda-files org-agenda-files)))
+	(todo "PLAN"
+	      ((org-agenda-overriding-header "In Planning")
+	       (org-agenda-todo-list-sublevels nil)
+	       (org-agenda-files org-agenda-files)))
+	(todo "BACKLOG"
+	      ((org-agenda-overriding-header "Project Backlog")
+	       (org-agenda-todo-list-sublevels nil)
+	       (org-agenda-files org-agenda-files)))
+	(todo "READY"
+	      ((org-agenda-overriding-header "Ready for Work")
+	       (org-agenda-files org-agenda-files)))
+	(todo "ACTIVE"
+	      ((org-agenda-overriding-header "Active Projects")
+	       (org-agenda-files org-agenda-files)))
+	(todo "COMPLETED"
+	      ((org-agenda-overriding-header "Completed Projects")
+	       (org-agenda-files org-agenda-files)))
+	(todo "CANC"
+	      ((org-agenda-overriding-header "Cancelled Projects")
+	       (org-agenda-files org-agenda-files)))))))
 
-  (setq org-capture-templates
-    `(("t" "Tasks / Projects")
-      ("tt" "Task" entry (file+olp "~/Projects/Code/emacs-from-scratch/OrgFiles/Tasks.org" "Inbox")
-           "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
+    (setq org-capture-templates
+      `(("t" "Tasks / Projects")
+	("tt" "Task" entry (file+olp "~/Projects/Code/emacs-from-scratch/OrgFiles/Tasks.org" "Inbox")
+	     "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
 
-      ("j" "Journal Entries")
-      ("jj" "Journal" entry
-           (file+olp+datetree "~/Projects/Code/emacs-from-scratch/OrgFiles/Journal.org")
-           "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
-           ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
-           :clock-in :clock-resume
-           :empty-lines 1)
-      ("jm" "Meeting" entry
-           (file+olp+datetree "~/Projects/Code/emacs-from-scratch/OrgFiles/Journal.org")
-           "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
-           :clock-in :clock-resume
-           :empty-lines 1)
+	("j" "Journal Entries")
+	("jj" "Journal" entry
+	     (file+olp+datetree "~/Projects/Code/emacs-from-scratch/OrgFiles/Journal.org")
+	     "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
+	     ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
+	     :clock-in :clock-resume
+	     :empty-lines 1)
+	("jm" "Meeting" entry
+	     (file+olp+datetree "~/Projects/Code/emacs-from-scratch/OrgFiles/Journal.org")
+	     "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+	     :clock-in :clock-resume
+	     :empty-lines 1)
 
-      ("w" "Workflows")
-      ("we" "Checking Email" entry (file+olp+datetree "~/Projects/Code/emacs-from-scratch/OrgFiles/Journal.org")
-           "* Checking Email :email:\n\n%?" :clock-in :clock-resume :empty-lines 1)
+	("w" "Workflows")
+	("we" "Checking Email" entry (file+olp+datetree "~/Projects/Code/emacs-from-scratch/OrgFiles/Journal.org")
+	     "* Checking Email :email:\n\n%?" :clock-in :clock-resume :empty-lines 1)
 
-      ("m" "Metrics Capture")
-      ("mw" "Weight" table-line (file+headline "~/Projects/Code/emacs-from-scratch/OrgFiles/Metrics.org" "Weight")
-       "| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)))
+	("m" "Metrics Capture")
+	("mw" "Weight" table-line (file+headline "~/Projects/Code/emacs-from-scratch/OrgFiles/Metrics.org" "Weight")
+	 "| %U | %^{Weight} | %^{Notes} |" :kill-buffer t)))
 
-  (define-key global-map (kbd "C-c j")
-    (lambda () (interactive) (org-capture nil "jj")))
+    (define-key global-map (kbd "C-c j")
+      (lambda () (interactive) (org-capture nil "jj")))
 
-  (efs/org-font-setup))
+    (efs/org-font-setup))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
@@ -566,9 +604,9 @@
   ;; (add-hook 'c-mode-hook 'eglot-ensure)
   ;; (add-hook 'c++-mode-hook 'eglot-ensure)
 
-(defun efs/lsp-mode-setup ()
-  (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
-  (lsp-headerline-breadcrumb-mode))
+;; (defun efs/lsp-mode-setup ()
+;;   (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
+;;   (lsp-headerline-breadcrumb-mode))
 
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
@@ -577,7 +615,7 @@
   (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   :config
   (lsp-enable-which-key-integration t))
-  (setq lsp-idle-delay 0.1)
+  (setq lsp-idle-delay 0.5)
 
 (use-package lsp-ui
     :hook (lsp-mode . lsp-ui-mode)
@@ -639,20 +677,20 @@
   ;; :config
   ;; (setq typescript-indent-level 2))
 
-(use-package cc-mode
+(use-package ccls
   :mode "\\.cpp\\'"
   :hook (c++-mode . lsp-deferred))
   ;; :config
   ;; (setq typescript-indent-level 2))
 
-(use-package cc-mode
+(use-package ccls
   :mode "\\.c\\'"
   :hook (c-mode . lsp-deferred))
   ;; :config
   ;; (setq typescript-indent-level 2))
 
 (use-package python-mode
-  :ensure t
+  :straight t
   :hook (python-mode . lsp-deferred)
   :custom
   ;; NOTE: Set these if Python 3 is called "python3" on your system!
@@ -667,65 +705,66 @@
   :config
   (pyvenv-mode 1))
 
-;;  (use-package company
-;;    :after lsp-mode
-;;    :hook (lsp-mode . company-mode)
-;;    :bind (:map company-active-map
-;;           ("<tab>" . company-complete-selection))
-;;          (:map lsp-mode-map
-;;           ("<tab>" . company-indent-or-complete-common))
-;;    :custom
-;;    (company-minimum-prefix-length 1)
-;;    (company-idle-delay 0.1))
+(use-package company
+   :after lsp-mode
+   :hook (lsp-mode . company-mode)
+   :bind (:map company-active-map
+          ("<tab>" . company-complete-selection))
+         (:map lsp-mode-map
+          ("<tab>" . company-indent-or-complete-common))
+   :custom
+   (company-minimum-prefix-length 1)
+   (company-idle-delay 0.1))
 
-;;  (use-package company-box
-;;    :hook (company-mode . company-box-mode))
-;; (setq company-idle-delay 0.1
-;;      company-tooltip-idle-delay 0.1
-;;      company-tooltip-maximum-width 80
-;;      company-minimum-prefix-length 2
-;;      company-require-match nil
-;;      company-tooltip-align-annotations t
-;;      company-tooltip-flip-when-above t
-;;      company-frontends
-;;      '(company-pseudo-tooltip-frontend
-;;        company-preview-frontend
-;;        company-echo-metadata-frontend))
+ (use-package company-box
+   :hook (company-mode . company-box-mode))
+(setq company-idle-delay 0.1
+     company-tooltip-idle-delay 0.1
+     company-tooltip-maximum-width 80
+     company-minimum-prefix-length 2
+     company-require-match nil
+     company-tooltip-align-annotations t
+     company-tooltip-flip-when-above t
+     company-frontends
+     '(company-pseudo-tooltip-frontend
+       company-preview-frontend
+       company-echo-metadata-frontend))
 
-;; corfu for autocompletion
-  (setq lsp-completion-provider :none)
-  (use-package corfu
-    ;; :after lsp-mode
-    :ensure t
-    :bind
-     ;; (:map corfu-map ("M-n" . corfu-popupinfo-scroll-up))
-     ;; (:map corfu-map ("M-N" . corfu-popupinfo-scroll-down))
-     ;; (:map corfu-map ("K" . corfu-info-documentation))
-     ;; (:map corfu-map ("J" . corfu-popupinfo-documentation))
-    :init
-    (global-corfu-mode)
-    (corfu-history-mode)
-    (corfu-popupinfo-mode)
-    :custom
-    (corfu-cycle t)
-    (corfu-auto-delay 0.1)
-    (corfu-idle-delay 0.1)
-    (corfu-auto t)
-    ;; (corfu-preview-current nil)
-    (corfu-popupinfo-delay 0.1)
-    (corfu-right-margin-width 1))
-(setq lsp-completion-provider :none)
-  (use-package kind-icon
-  :ensure t
-  :after corfu
-  :custom
-  (kind-icon-default-face 'corfu-default)
-  (kind-icon-blend-background nil)
-  :config
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+;;  ;; corfu for autocompletion
+;; (setq lsp-completion-provider :none)
+;; (use-package corfu
+;;   ;; :after lsp-mode
+;;   :straight t
+;;   :bind
+;;    ;; (:map corfu-map ("M-n" . corfu-popupinfo-scroll-up))
+;;    ;; (:map corfu-map ("M-N" . corfu-popupinfo-scroll-down))
+;;    ;; (:map corfu-map ("K" . corfu-info-documentation))
+;;    ;; (:map corfu-map ("J" . corfu-popupinfo-documentation))
+;;   :init
+;;   (setq lsp-completion-provider :none)
+;;   (global-corfu-mode)
+;;   (corfu-history-mode)
+;;   ;; (corfu-popupinfo-mode)
+;;   :custom
+;;   (corfu-cycle t)
+;;   (corfu-auto-delay 0.1)
+;;   (corfu-auto-prefix 2)
+;;   ;; (corfu-idle-delay 0.1)
+;;   (corfu-auto t)
+;;   ;; (corfu-preview-current nil)
+;;   ;; (corfu-popupinfo-delay 0.1)
+;;   (corfu-right-margin-width 1))
+;; (use-package kind-icon
+;; :straight t
+;; :after lsp
+;; :custom
+;; (kind-icon-default-face 'corfu-default)
+;; (kind-icon-blend-background nil)
+;; :config
+;; (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
-  ;; (define-key evil-normal-state-map (kbd "C-n") 'corfu-popupinfo-scroll-down)
-  ;; (define-key evil-normal-state-map (kbd "C-p") 'corfu-popupinfo-scroll-up)
+;; ;; (define-key evil-normal-state-map (kbd "C-n") 'corfu-popupinfo-scroll-down)
+;; ;; (define-key evil-normal-state-map (kbd "C-p") 'corfu-popupinfo-scroll-up)
 
 ;; Add extensions
 (use-package cape
@@ -760,7 +799,7 @@
   ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
   ;;(add-to-list 'completion-at-point-functions #'cape-dict)
   ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
-  (add-to-list 'completion-at-point-functions #'cape-line)
+  ;; (add-to-list 'completion-at-point-functions #'cape-line)
 )
 
 (use-package projectile
@@ -797,7 +836,7 @@
   :hook (prog-mode . rainbow-delimiters-mode))
 
 (use-package tree-sitter
-  :ensure t
+  :straight t
   :config
   (global-tree-sitter-mode)
   (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)) 
@@ -860,7 +899,7 @@
   (eshell-git-prompt-use-theme 'powerline))
 
 (use-package dired
-  :ensure nil
+  :straight nil
   :commands (dired dired-jump)
   :bind (("C-x C-j" . dired-jump))
   :custom ((dired-listing-switches "-agho --group-directories-first"))
