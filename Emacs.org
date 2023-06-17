@@ -22,7 +22,6 @@ The following variables are used to tweak some of the configuration pieces for u
   (defvar efs/frame-transparency '(90 . 90))
   ;; stop cursor blinking
   (blink-cursor-mode -1)
-
 #+end_src
 
 #+RESULTS:
@@ -37,7 +36,10 @@ In this document I've added links in many places that lead you to documentation 
 #+begin_src emacs-lisp
 
   ;; The default is 800 kilobytes.  Measured in bytes.
-  (setq gc-cons-threshold (* 50 1000 1000))
+  ;; (setq gc-cons-threshold (* 50 1000 1000))
+  (setq gc-cons-threshold 100000000)
+  (setq read-process-output-max (* 1024 1024)) ;; 1mb
+
 
   (defun efs/display-startup-time ()
     (message "Emacs loaded in %s with %d garbage collections."
@@ -176,110 +178,111 @@ This configuration uses [[https://evil.readthedocs.io/en/latest/index.html][evil
 
 #+begin_src emacs-lisp
 
-          ;; Make ESC quit prompts
-          (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-          (global-set-key (kbd "C-g") 'keyboard-escape-quit)
+            ;; Make ESC quit prompts
+            (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+            (global-set-key (kbd "C-g") 'keyboard-escape-quit)
 
-          (use-package general
-            :after evil
-            :config
-            (general-create-definer efs/leader-keys
-              :keymaps '(normal insert visual emacs)
-              :prefix "SPC"
-              :global-prefix "C-SPC")
+            (use-package general
+              :after evil
+              :config
+              (general-create-definer efs/leader-keys
+                :keymaps '(normal insert visual emacs)
+                :prefix "SPC"
+                :global-prefix "C-SPC")
 
-            (efs/leader-keys
-              "t"  '(:ignore t :which-key "toggles")
-              "tt" '(counsel-load-theme :which-key "choose theme")
-              "fde" '(lambda () (interactive) (find-file (expand-file-name "~/.emacs.d/Emacs.org")))))
+              (efs/leader-keys
+                "t"  '(:ignore t :which-key "toggles")
+                "tt" '(counsel-load-theme :which-key "choose theme")
+                "fde" '(lambda () (interactive) (find-file (expand-file-name "~/.emacs.d/Emacs.org")))))
 
-          (use-package evil
-            :init
-            (setq evil-want-integration t)
-            (setq evil-want-keybinding nil)
-            (setq evil-want-C-u-scroll t)
-            (setq evil-want-C-i-jump nil)
-            :config
-            (evil-mode 1)
-            ;;(define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
-            (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join)
+            (use-package evil
+              :init
+              (setq evil-want-integration t)
+              (setq evil-want-keybinding nil)
+              (setq evil-want-C-u-scroll t)
+              (setq evil-want-C-i-jump nil)
+              :config
+              (evil-mode 1)
+              ;;(define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
+              (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join)
 
-            ;; Use visual line motions even outside of visual-line-mode buffers
-            (evil-global-set-key 'motion "j" 'evil-next-visual-line)
-            (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+              ;; Use visual line motions even outside of visual-line-mode buffers
+              (evil-global-set-key 'motion "j" 'evil-next-visual-line)
+              (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
 
-            (evil-set-initial-state 'messages-buffer-mode 'normal)
-            (evil-set-initial-state 'dashboard-mode 'normal))
+              (evil-set-initial-state 'messages-buffer-mode 'normal)
+              (evil-set-initial-state 'dashboard-mode 'normal))
 
-          (use-package evil-collection
-            :after evil
-            :config
-            (evil-collection-init))
+            (use-package evil-collection
+              :after evil
+              :config
+              (evil-collection-init))
 
-          (use-package evil-commentary
-             :after evil)
-          (evil-commentary-mode)
-        (defun my-jk ()
-          (interactive)
-          (let* ((initial-key ?j)
-                 (final-key ?k)
-                 (timeout 0.5)
-                 (event (read-event nil nil timeout)))
-            (if event
-                ;; timeout met
-                (if (and (characterp event) (= event final-key))
-                    (evil-normal-state)
-                  (insert initial-key)
-                  (push event unread-command-events))
-              ;; timeout exceeded
-              (insert initial-key))))
+            (use-package evil-commentary
+               :after evil)
+            (evil-commentary-mode)
+          (defun my-jk ()
+            (interactive)
+            (let* ((initial-key ?j)
+                   (final-key ?k)
+                   (timeout 0.5)
+                   (event (read-event nil nil timeout)))
+              (if event
+                  ;; timeout met
+                  (if (and (characterp event) (= event final-key))
+                      (evil-normal-state)
+                    (insert initial-key)
+                    (push event unread-command-events))
+                ;; timeout exceeded
+                (insert initial-key))))
 
-        (define-key evil-insert-state-map (kbd "j") 'my-jk)
+          (define-key evil-insert-state-map (kbd "j") 'my-jk)
 
-        (defun my-kj ()
-          (interactive)
-          (let* ((initial-key ?k)
-                 (final-key ?j)
-                 (timeout 0.5)
-                 (event (read-event nil nil timeout)))
-            (if event
-                ;; timeout met
-                (if (and (characterp event) (= event final-key))
-                    (evil-normal-state)
-                  (insert initial-key)
-                  (push event unread-command-events))
-              ;; timeout exceeded
-              (insert initial-key))))
+          (defun my-kj ()
+            (interactive)
+            (let* ((initial-key ?k)
+                   (final-key ?j)
+                   (timeout 0.5)
+                   (event (read-event nil nil timeout)))
+              (if event
+                  ;; timeout met
+                  (if (and (characterp event) (= event final-key))
+                      (evil-normal-state)
+                    (insert initial-key)
+                    (push event unread-command-events))
+                ;; timeout exceeded
+                (insert initial-key))))
 
-        (define-key evil-insert-state-map (kbd "k") 'my-kj)
-
-
-    (use-package evil-surround
-      :ensure t
-      :config
-      (global-evil-surround-mode 1))
+          (define-key evil-insert-state-map (kbd "k") 'my-kj)
 
 
-      ;; keybindings for switching and resizing windows and buffers
-      (global-set-key (kbd "M-h") 'evil-window-left)
-      (global-set-key (kbd "M-l") 'evil-window-right)
-      (global-set-key (kbd "M-k") 'evil-window-up)
-      (global-set-key (kbd "M-j") 'evil-window-down)
+      (use-package evil-surround
+        :ensure t
+        :config
+        (global-evil-surround-mode 1))
+       (evil-set-undo-system 'undo-redo)
 
-      (global-set-key (kbd "C-S-k") 'evil-window-increase-height)
-      (global-set-key (kbd "C-S-j") 'evil-window-decrease-height)
-      (global-set-key (kbd "C-S-l") 'evil-window-increase-width)
-      (global-set-key (kbd "C-S-h") 'evil-window-decrease-width)
+        ;; keybindings for switching and resizing windows and buffers
+        (global-set-key (kbd "M-h") 'evil-window-left)
+        (global-set-key (kbd "M-l") 'evil-window-right)
+        (global-set-key (kbd "M-k") 'evil-window-up)
+        (global-set-key (kbd "M-j") 'evil-window-down)
 
-      (global-set-key (kbd "M-H") '+evil/window-move-left)
-      (global-set-key (kbd "M-L") '+evil/window-move-right)
-      (global-set-key (kbd "M-K") '+evil/window-move-up)
-      (global-set-key (kbd "M-J") '+evil/window-move-down)
+        (global-set-key (kbd "C-S-k") 'evil-window-increase-height)
+        (global-set-key (kbd "C-S-j") 'evil-window-decrease-height)
+        (global-set-key (kbd "C-S-l") 'evil-window-increase-width)
+        (global-set-key (kbd "C-S-h") 'evil-window-decrease-width)
+
+        (global-set-key (kbd "M-H") '+evil/window-move-left)
+        (global-set-key (kbd "M-L") '+evil/window-move-right)
+        (global-set-key (kbd "M-K") '+evil/window-move-up)
+        (global-set-key (kbd "M-J") '+evil/window-move-down)
 
 
-      (define-key evil-normal-state-map (kbd "L") 'next-buffer)
-      (define-key evil-normal-state-map (kbd "H") 'previous-buffer)
-  (use-package fzf)
+        (define-key evil-normal-state-map (kbd "L") 'next-buffer)
+        (define-key evil-normal-state-map (kbd "H") 'previous-buffer)
+    (use-package fzf)
+ 
 #+end_src
 
 * UI Configuration
@@ -302,7 +305,7 @@ This configuration uses [[https://evil.readthedocs.io/en/latest/index.html][evil
 #+begin_src emacs-lisp
 
 (use-package doom-themes
-  :init (load-theme 'wombat t))
+  :init (load-theme 'doom-dracula t))
 
 #+end_src
 
@@ -314,12 +317,80 @@ This configuration uses [[https://evil.readthedocs.io/en/latest/index.html][evil
 
 #+begin_src emacs-lisp
 
-(use-package all-the-icons)
+  (use-package all-the-icons)
 
-(use-package doom-modeline
-  :init (doom-modeline-mode 1)
-  :custom ((doom-modeline-height 15)))
+  (setq doom-modeline-support-imenu t)
+  (use-package doom-modeline
+    :init (doom-modeline-mode 1)
+    :custom ((doom-modeline-height 15)))
 
+  (setq doom-modeline-height 25)
+
+  ;; How wide the mode-line bar should be. It's only respected in GUI.
+  (setq doom-modeline-bar-width 4)
+  (setq doom-modeline-hud nil)
+  (setq doom-modeline-window-width-limit 85)
+  (setq doom-modeline-project-detection 'auto)
+
+  (setq doom-modeline-buffer-file-name-style 'auto)
+  (setq doom-modeline-icon t)
+  (setq doom-modeline-major-mode-icon t)
+
+  (setq doom-modeline-major-mode-color-icon t)
+  (setq doom-modeline-buffer-state-icon t)
+  (setq doom-modeline-buffer-modification-icon t)
+  (setq doom-modeline-time-icon t)
+  (setq doom-modeline-unicode-fallback nil)
+  (setq doom-modeline-buffer-name t)
+  (setq doom-modeline-highlight-modified-buffer-name t)
+  (setq doom-modeline-minor-modes nil)
+  (setq doom-modeline-enable-word-count nil)
+  (setq doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode))
+  (setq doom-modeline-buffer-encoding t)
+  (setq doom-modeline-indent-info nil)
+  (setq doom-modeline-checker-simple-format t)
+  (setq doom-modeline-number-limit 99)
+  (setq doom-modeline-vcs-max-length 12)
+  (setq doom-modeline-workspace-name t)
+  (setq doom-modeline-persp-name t)
+  (setq doom-modeline-display-default-persp-name nil)
+  (setq doom-modeline-persp-icon t)
+  (setq doom-modeline-lsp t)
+  (setq doom-modeline-github nil)
+  (setq doom-modeline-github-interval (* 30 60))
+  (setq doom-modeline-modal t)
+  (setq doom-modeline-modal-icon t)
+  ;; (setq doom-modeline-mu4e nil)
+  ;; (mu4e-alert-enable-mode-line-display)
+  (setq doom-modeline-gnus t)
+  (setq doom-modeline-gnus-timer 2)
+  (setq doom-modeline-gnus-excluded-groups '("dummy.group"))
+  (setq doom-modeline-irc t)
+  (setq doom-modeline-irc-stylize 'identity)
+  (setq doom-modeline-battery t)
+  (setq doom-modeline-time t)
+  (setq doom-modeline-display-misc-in-all-mode-lines t)
+  (setq doom-modeline-env-version t)
+  (setq doom-modeline-env-enable-python t)
+  (setq doom-modeline-env-enable-ruby t)
+  (setq doom-modeline-env-enable-perl t)
+  (setq doom-modeline-env-enable-go t)
+  (setq doom-modeline-env-enable-elixir t)
+  (setq doom-modeline-env-enable-rust t)
+  ;; Change the executables to use for the language version string
+  (setq doom-modeline-env-python-executable "python") ; or `python-shell-interpreter'
+  (setq doom-modeline-env-ruby-executable "ruby")
+  (setq doom-modeline-env-perl-executable "perl")
+  (setq doom-modeline-env-go-executable "go")
+  (setq doom-modeline-env-elixir-executable "iex")
+  (setq doom-modeline-env-rust-executable "rustc")
+  (setq doom-modeline-env-rust-executable "javascript")
+  (setq doom-modeline-env-rust-executable "cpp")
+
+  (setq doom-modeline-env-load-string "...")
+  (setq doom-modeline-always-visible-segments '(mu4e irc))
+  (setq doom-modeline-before-update-env-hook nil)
+  (setq doom-modeline-after-update-env-hook nil)
 #+end_src
 
 ** Dashboard
@@ -713,6 +784,16 @@ This snippet adds a hook to =org-mode= buffers so that =efs/org-babel-tangle-con
 
 *** IDE Features with lsp-mode
 
+**** elgot
+installation failed
+#+begin_src emacs-lisp
+  ;; (use-package elgot)
+    ;; (require 'eglot)
+    ;; (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+    ;; (add-hook 'c-mode-hook 'eglot-ensure)
+    ;; (add-hook 'c++-mode-hook 'eglot-ensure)
+#+end_src
+
 **** lsp-mode
 
 We use the excellent [[https://emacs-lsp.github.io/lsp-mode/][lsp-mode]] to enable IDE-like functionality for many different programming languages via "language servers" that speak the [[https://microsoft.github.io/language-server-protocol/][Language Server Protocol]].  Before trying to set up =lsp-mode= for a particular language, check out the [[https://emacs-lsp.github.io/lsp-mode/page/languages/][documentation for your language]] so that you can learn which language servers are available and how to install them.
@@ -734,6 +815,7 @@ The =which-key= integration adds helpful descriptions of the various keys so you
     (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
     :config
     (lsp-enable-which-key-integration t))
+    (setq lsp-idle-delay 0.1)
 
 #+end_src
 
@@ -749,8 +831,12 @@ The =which-key= integration adds helpful descriptions of the various keys so you
       (lsp-ui-doc-position 'bottom))
 
   ;; keybinding for showing doc and lsp-ui-menu
-  (define-key evil-normal-state-map (kbd "K") 'lsp-ui-doc-glance)
+  ;; (define-key evil-normal-state-map (kbd "K") 'lsp-ui-doc-glance)
+  (define-key evil-normal-state-map (kbd "K") 'lsp-describe-thing-at-point)
   (define-key evil-normal-state-map (kbd "J") 'lsp-ui-imenu)
+  ;; (define-key evil-normal-state-map (kbd "J") 'lsp-ui-doc-focus-frame)
+  ;; (define-key evil-normal-state-map (kbd "q") 'lsp-ui-doc-unfocus-frame)
+
 
 #+end_src
 
@@ -840,6 +926,48 @@ npm install -g typescript-language-server typescript
 
 This will install the [[https://github.com/theia-ide/typescript-language-server][typescript-language-server]] and the TypeScript compiler package.
 
+*** javascript
+#+begin_src emacs-lisp
+  (use-package js2-mode
+    :mode "\\.js\\'"
+    :hook (js2-mode . lsp-deferred))
+    ;; :config
+    ;; (setq typescript-indent-level 2))
+#+end_src
+
+*** Rust
+#+begin_src emacs-lisp
+  (use-package rust-mode
+    :mode "\\.rs\\'"
+    :hook (rust-mode . lsp-deferred))
+    ;; :config
+    ;; (setq typescript-indent-level 2))
+#+end_src
+*** rjsx
+#+begin_src emacs-lisp
+  (use-package rjsx-mode
+    :mode "\\.jsx\\'"
+    :hook (rjsx-mode . lsp-deferred))
+    ;; :config
+    ;; (setq typescript-indent-level 2))
+#+end_src
+*** cc-mode for c++
+#+begin_src emacs-lisp
+  (use-package cc-mode
+    :mode "\\.cpp\\'"
+    :hook (c++-mode . lsp-deferred))
+    ;; :config
+    ;; (setq typescript-indent-level 2))
+#+end_src
+
+*** cc-mode for c
+#+begin_src emacs-lisp
+  (use-package cc-mode
+    :mode "\\.c\\'"
+    :hook (c-mode . lsp-deferred))
+    ;; :config
+    ;; (setq typescript-indent-level 2))
+#+end_src
 *** Python
 
 We use =lsp-mode= and =dap-mode= to provide a more complete development environment for Python in Emacs.  Check out [[https://emacs-lsp.github.io/lsp-mode/page/lsp-pyls/][the =pyls= configuration]] in the =lsp-mode= documentation for more details.
@@ -889,23 +1017,110 @@ We also use [[https://github.com/sebastiencs/company-box][company-box]] to furth
 
 #+begin_src emacs-lisp
 
-  (use-package company
-    :after lsp-mode
-    :hook (lsp-mode . company-mode)
-    :bind (:map company-active-map
-           ("<tab>" . company-complete-selection))
-          (:map lsp-mode-map
-           ("<tab>" . company-indent-or-complete-common))
-    :custom
-    (company-minimum-prefix-length 1)
-    (company-idle-delay 0.0))
+  ;;  (use-package company
+  ;;    :after lsp-mode
+  ;;    :hook (lsp-mode . company-mode)
+  ;;    :bind (:map company-active-map
+  ;;           ("<tab>" . company-complete-selection))
+  ;;          (:map lsp-mode-map
+  ;;           ("<tab>" . company-indent-or-complete-common))
+  ;;    :custom
+  ;;    (company-minimum-prefix-length 1)
+  ;;    (company-idle-delay 0.1))
 
-  (use-package company-box
-    :hook (company-mode . company-box-mode))
+  ;;  (use-package company-box
+  ;;    :hook (company-mode . company-box-mode))
+  ;; (setq company-idle-delay 0.1
+  ;;      company-tooltip-idle-delay 0.1
+  ;;      company-tooltip-maximum-width 80
+  ;;      company-minimum-prefix-length 2
+  ;;      company-require-match nil
+  ;;      company-tooltip-align-annotations t
+  ;;      company-tooltip-flip-when-above t
+  ;;      company-frontends
+  ;;      '(company-pseudo-tooltip-frontend
+  ;;        company-preview-frontend
+  ;;        company-echo-metadata-frontend))
+
 
 #+end_src
+** corfu
+#+begin_src emacs-lisp
+     ;; corfu for autocompletion
+    (setq lsp-completion-provider :none)
+    (use-package corfu
+      ;; :after lsp-mode
+      :ensure t
+      :bind
+       ;; (:map corfu-map ("M-n" . corfu-popupinfo-scroll-up))
+       ;; (:map corfu-map ("M-N" . corfu-popupinfo-scroll-down))
+       ;; (:map corfu-map ("K" . corfu-info-documentation))
+       ;; (:map corfu-map ("J" . corfu-popupinfo-documentation))
+      :init
+      (global-corfu-mode)
+      (corfu-history-mode)
+      (corfu-popupinfo-mode)
+      :custom
+      (corfu-cycle t)
+      (corfu-auto-delay 0.1)
+      (corfu-idle-delay 0.1)
+      (corfu-auto t)
+      ;; (corfu-preview-current nil)
+      (corfu-popupinfo-delay 0.1)
+      (corfu-right-margin-width 1))
+  (setq lsp-completion-provider :none)
+    (use-package kind-icon
+    :ensure t
+    :after corfu
+    :custom
+    (kind-icon-default-face 'corfu-default)
+    (kind-icon-blend-background nil)
+    :config
+    (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
-** Projectile
+    ;; (define-key evil-normal-state-map (kbd "C-n") 'corfu-popupinfo-scroll-down)
+    ;; (define-key evil-normal-state-map (kbd "C-p") 'corfu-popupinfo-scroll-up)
+
+#+end_src
+*** cape
+#+begin_src emacs-lisp
+    ;; Add extensions
+  (use-package cape
+    ;; Bind dedicated completion commands
+    ;; Alternative prefix keys: C-c p, M-p, M-+, ...
+    :bind (("C-c p p" . completion-at-point) ;; capf
+           ("C-c p t" . complete-tag)        ;; etags
+           ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
+           ("C-c p h" . cape-history)
+           ("C-c p f" . cape-file)
+           ("C-c p k" . cape-keyword)
+           ("C-c p s" . cape-symbol)
+           ("C-c p a" . cape-abbrev)
+           ("C-c p l" . cape-line)
+           ("C-c p w" . cape-dict)
+           ("C-c p \\" . cape-tex)
+           ("C-c p _" . cape-tex)
+           ("C-c p ^" . cape-tex)
+           ("C-c p &" . cape-sgml)
+           ("C-c p r" . cape-rfc1345))
+    :init
+    ;; Add `completion-at-point-functions', used by `completion-at-point'.
+    ;; NOTE: The order matters!
+    (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+    (add-to-list 'completion-at-point-functions #'cape-file)
+    (add-to-list 'completion-at-point-functions #'cape-elisp-block)
+    ;;(add-to-list 'completion-at-point-functions #'cape-history)
+    ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
+    ;;(add-to-list 'completion-at-point-functions #'cape-tex)
+    ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
+    ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
+    ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
+    ;;(add-to-list 'completion-at-point-functions #'cape-dict)
+    ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
+    (add-to-list 'completion-at-point-functions #'cape-line)
+  )
+#+end_src
+*** Projectile
 
 [[https://projectile.mx/][Projectile]] is a project management library for Emacs which makes it a lot easier to navigate around code projects for various languages.  Many packages integrate with Projectile so it's a good idea to have it installed even if you don't use its commands directly.
 
@@ -929,7 +1144,7 @@ We also use [[https://github.com/sebastiencs/company-box][company-box]] to furth
 
 #+end_src
 
-** Magit
+*** Magit
 
 [[https://magit.vc/][Magit]] is the best Git interface I've ever used.  Common Git operations are easy to execute quickly using Magit's command panel system.
 
@@ -948,7 +1163,7 @@ We also use [[https://github.com/sebastiencs/company-box][company-box]] to furth
 
 #+end_src
 
-** Commenting
+*** Commenting
 
 Emacs' built in commenting functionality =comment-dwim= (usually bound to =M-;=) doesn't always comment things in the way you might expect so we use [[https://github.com/redguardtoo/evil-nerd-commenter][evil-nerd-commenter]] to provide a more familiar behavior.  I've bound it to =M-/= since other editors sometimes use this binding but you could also replace Emacs' =M-;= binding with this command.
 
@@ -959,7 +1174,7 @@ Emacs' built in commenting functionality =comment-dwim= (usually bound to =M-;=)
 
 #+end_src
 
-** Rainbow Delimiters
+*** Rainbow Delimiters
 
 [[https://github.com/Fanael/rainbow-delimiters][rainbow-delimiters]] is useful in programming modes because it colorizes nested parentheses and brackets according to their nesting depth.  This makes it a lot easier to visually match parentheses in Emacs Lisp code without having to count them yourself.
 
@@ -970,13 +1185,20 @@ Emacs' built in commenting functionality =comment-dwim= (usually bound to =M-;=)
 
 #+end_src
 
-** Treesitter
+*** Treesitter
 #+begin_src emacs-lisp
-  (use-package tree-sitter) 
-  (use-package tree-sitter-langs) 
-  (require 'tree-sitter)
-  (require 'tree-sitter-langs)
-  (global-tree-sitter-mode)
+  (use-package tree-sitter
+    :ensure t
+    :config
+    (global-tree-sitter-mode)
+    (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)) 
+  (use-package tree-sitter-langs
+    :after tree-sitter) 
+
+#+end_src
+*** yasnippets
+#+begin_src emacs-lisp
+  (use-package yasnippet)
 #+end_src
 * Terminals
 

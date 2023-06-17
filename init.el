@@ -11,7 +11,10 @@
 (blink-cursor-mode -1)
 
 ;; The default is 800 kilobytes.  Measured in bytes.
-(setq gc-cons-threshold (* 50 1000 1000))
+;; (setq gc-cons-threshold (* 50 1000 1000))
+(setq gc-cons-threshold 100000000)
+(setq read-process-output-max (* 1024 1024)) ;; 1mb
+
 
 (defun efs/display-startup-time ()
   (message "Emacs loaded in %s with %d garbage collections."
@@ -179,7 +182,7 @@
     :ensure t
     :config
     (global-evil-surround-mode 1))
-
+   (evil-set-undo-system 'undo-redo)
 
     ;; keybindings for switching and resizing windows and buffers
     (global-set-key (kbd "M-h") 'evil-window-left)
@@ -206,13 +209,82 @@
   :commands command-log-mode)
 
 (use-package doom-themes
-  :init (load-theme 'wombat t))
+  :init (load-theme 'doom-dracula t))
 
 (use-package all-the-icons)
 
+(setq doom-modeline-support-imenu t)
 (use-package doom-modeline
   :init (doom-modeline-mode 1)
   :custom ((doom-modeline-height 15)))
+
+(setq doom-modeline-height 25)
+
+;; How wide the mode-line bar should be. It's only respected in GUI.
+(setq doom-modeline-bar-width 4)
+(setq doom-modeline-hud nil)
+(setq doom-modeline-window-width-limit 85)
+(setq doom-modeline-project-detection 'auto)
+
+(setq doom-modeline-buffer-file-name-style 'auto)
+(setq doom-modeline-icon t)
+(setq doom-modeline-major-mode-icon t)
+
+(setq doom-modeline-major-mode-color-icon t)
+(setq doom-modeline-buffer-state-icon t)
+(setq doom-modeline-buffer-modification-icon t)
+(setq doom-modeline-time-icon t)
+(setq doom-modeline-unicode-fallback nil)
+(setq doom-modeline-buffer-name t)
+(setq doom-modeline-highlight-modified-buffer-name t)
+(setq doom-modeline-minor-modes nil)
+(setq doom-modeline-enable-word-count nil)
+(setq doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode))
+(setq doom-modeline-buffer-encoding t)
+(setq doom-modeline-indent-info nil)
+(setq doom-modeline-checker-simple-format t)
+(setq doom-modeline-number-limit 99)
+(setq doom-modeline-vcs-max-length 12)
+(setq doom-modeline-workspace-name t)
+(setq doom-modeline-persp-name t)
+(setq doom-modeline-display-default-persp-name nil)
+(setq doom-modeline-persp-icon t)
+(setq doom-modeline-lsp t)
+(setq doom-modeline-github nil)
+(setq doom-modeline-github-interval (* 30 60))
+(setq doom-modeline-modal t)
+(setq doom-modeline-modal-icon t)
+;; (setq doom-modeline-mu4e nil)
+;; (mu4e-alert-enable-mode-line-display)
+(setq doom-modeline-gnus t)
+(setq doom-modeline-gnus-timer 2)
+(setq doom-modeline-gnus-excluded-groups '("dummy.group"))
+(setq doom-modeline-irc t)
+(setq doom-modeline-irc-stylize 'identity)
+(setq doom-modeline-battery t)
+(setq doom-modeline-time t)
+(setq doom-modeline-display-misc-in-all-mode-lines t)
+(setq doom-modeline-env-version t)
+(setq doom-modeline-env-enable-python t)
+(setq doom-modeline-env-enable-ruby t)
+(setq doom-modeline-env-enable-perl t)
+(setq doom-modeline-env-enable-go t)
+(setq doom-modeline-env-enable-elixir t)
+(setq doom-modeline-env-enable-rust t)
+;; Change the executables to use for the language version string
+(setq doom-modeline-env-python-executable "python") ; or `python-shell-interpreter'
+(setq doom-modeline-env-ruby-executable "ruby")
+(setq doom-modeline-env-perl-executable "perl")
+(setq doom-modeline-env-go-executable "go")
+(setq doom-modeline-env-elixir-executable "iex")
+(setq doom-modeline-env-rust-executable "rustc")
+(setq doom-modeline-env-rust-executable "javascript")
+(setq doom-modeline-env-rust-executable "cpp")
+
+(setq doom-modeline-env-load-string "...")
+(setq doom-modeline-always-visible-segments '(mu4e irc))
+(setq doom-modeline-before-update-env-hook nil)
+(setq doom-modeline-after-update-env-hook nil)
 
 (use-package dashboard
  :ensure t
@@ -488,6 +560,12 @@
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'efs/org-babel-tangle-config)))
 
+;; (use-package elgot)
+  ;; (require 'eglot)
+  ;; (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+  ;; (add-hook 'c-mode-hook 'eglot-ensure)
+  ;; (add-hook 'c++-mode-hook 'eglot-ensure)
+
 (defun efs/lsp-mode-setup ()
   (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
   (lsp-headerline-breadcrumb-mode))
@@ -499,6 +577,7 @@
   (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   :config
   (lsp-enable-which-key-integration t))
+  (setq lsp-idle-delay 0.1)
 
 (use-package lsp-ui
     :hook (lsp-mode . lsp-ui-mode)
@@ -506,8 +585,11 @@
     (lsp-ui-doc-position 'bottom))
 
 ;; keybinding for showing doc and lsp-ui-menu
-(define-key evil-normal-state-map (kbd "K") 'lsp-ui-doc-glance)
+;; (define-key evil-normal-state-map (kbd "K") 'lsp-ui-doc-glance)
+(define-key evil-normal-state-map (kbd "K") 'lsp-describe-thing-at-point)
 (define-key evil-normal-state-map (kbd "J") 'lsp-ui-imenu)
+;; (define-key evil-normal-state-map (kbd "J") 'lsp-ui-doc-focus-frame)
+;; (define-key evil-normal-state-map (kbd "q") 'lsp-ui-doc-unfocus-frame)
 
 (use-package lsp-treemacs
   :after lsp)
@@ -539,6 +621,36 @@
   :config
   (setq typescript-indent-level 2))
 
+(use-package js2-mode
+  :mode "\\.js\\'"
+  :hook (js2-mode . lsp-deferred))
+  ;; :config
+  ;; (setq typescript-indent-level 2))
+
+(use-package rust-mode
+  :mode "\\.rs\\'"
+  :hook (rust-mode . lsp-deferred))
+  ;; :config
+  ;; (setq typescript-indent-level 2))
+
+(use-package rjsx-mode
+  :mode "\\.jsx\\'"
+  :hook (rjsx-mode . lsp-deferred))
+  ;; :config
+  ;; (setq typescript-indent-level 2))
+
+(use-package cc-mode
+  :mode "\\.cpp\\'"
+  :hook (c++-mode . lsp-deferred))
+  ;; :config
+  ;; (setq typescript-indent-level 2))
+
+(use-package cc-mode
+  :mode "\\.c\\'"
+  :hook (c-mode . lsp-deferred))
+  ;; :config
+  ;; (setq typescript-indent-level 2))
+
 (use-package python-mode
   :ensure t
   :hook (python-mode . lsp-deferred)
@@ -555,19 +667,101 @@
   :config
   (pyvenv-mode 1))
 
-(use-package company
-  :after lsp-mode
-  :hook (lsp-mode . company-mode)
-  :bind (:map company-active-map
-         ("<tab>" . company-complete-selection))
-        (:map lsp-mode-map
-         ("<tab>" . company-indent-or-complete-common))
-  :custom
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0))
+;;  (use-package company
+;;    :after lsp-mode
+;;    :hook (lsp-mode . company-mode)
+;;    :bind (:map company-active-map
+;;           ("<tab>" . company-complete-selection))
+;;          (:map lsp-mode-map
+;;           ("<tab>" . company-indent-or-complete-common))
+;;    :custom
+;;    (company-minimum-prefix-length 1)
+;;    (company-idle-delay 0.1))
 
-(use-package company-box
-  :hook (company-mode . company-box-mode))
+;;  (use-package company-box
+;;    :hook (company-mode . company-box-mode))
+;; (setq company-idle-delay 0.1
+;;      company-tooltip-idle-delay 0.1
+;;      company-tooltip-maximum-width 80
+;;      company-minimum-prefix-length 2
+;;      company-require-match nil
+;;      company-tooltip-align-annotations t
+;;      company-tooltip-flip-when-above t
+;;      company-frontends
+;;      '(company-pseudo-tooltip-frontend
+;;        company-preview-frontend
+;;        company-echo-metadata-frontend))
+
+;; corfu for autocompletion
+  (setq lsp-completion-provider :none)
+  (use-package corfu
+    ;; :after lsp-mode
+    :ensure t
+    :bind
+     ;; (:map corfu-map ("M-n" . corfu-popupinfo-scroll-up))
+     ;; (:map corfu-map ("M-N" . corfu-popupinfo-scroll-down))
+     ;; (:map corfu-map ("K" . corfu-info-documentation))
+     ;; (:map corfu-map ("J" . corfu-popupinfo-documentation))
+    :init
+    (global-corfu-mode)
+    (corfu-history-mode)
+    (corfu-popupinfo-mode)
+    :custom
+    (corfu-cycle t)
+    (corfu-auto-delay 0.1)
+    (corfu-idle-delay 0.1)
+    (corfu-auto t)
+    ;; (corfu-preview-current nil)
+    (corfu-popupinfo-delay 0.1)
+    (corfu-right-margin-width 1))
+(setq lsp-completion-provider :none)
+  (use-package kind-icon
+  :ensure t
+  :after corfu
+  :custom
+  (kind-icon-default-face 'corfu-default)
+  (kind-icon-blend-background nil)
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+
+  ;; (define-key evil-normal-state-map (kbd "C-n") 'corfu-popupinfo-scroll-down)
+  ;; (define-key evil-normal-state-map (kbd "C-p") 'corfu-popupinfo-scroll-up)
+
+;; Add extensions
+(use-package cape
+  ;; Bind dedicated completion commands
+  ;; Alternative prefix keys: C-c p, M-p, M-+, ...
+  :bind (("C-c p p" . completion-at-point) ;; capf
+         ("C-c p t" . complete-tag)        ;; etags
+         ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
+         ("C-c p h" . cape-history)
+         ("C-c p f" . cape-file)
+         ("C-c p k" . cape-keyword)
+         ("C-c p s" . cape-symbol)
+         ("C-c p a" . cape-abbrev)
+         ("C-c p l" . cape-line)
+         ("C-c p w" . cape-dict)
+         ("C-c p \\" . cape-tex)
+         ("C-c p _" . cape-tex)
+         ("C-c p ^" . cape-tex)
+         ("C-c p &" . cape-sgml)
+         ("C-c p r" . cape-rfc1345))
+  :init
+  ;; Add `completion-at-point-functions', used by `completion-at-point'.
+  ;; NOTE: The order matters!
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+  (add-to-list 'completion-at-point-functions #'cape-file)
+  (add-to-list 'completion-at-point-functions #'cape-elisp-block)
+  ;;(add-to-list 'completion-at-point-functions #'cape-history)
+  ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
+  ;;(add-to-list 'completion-at-point-functions #'cape-tex)
+  ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
+  ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
+  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
+  ;;(add-to-list 'completion-at-point-functions #'cape-dict)
+  ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
+  (add-to-list 'completion-at-point-functions #'cape-line)
+)
 
 (use-package projectile
   :diminish projectile-mode
@@ -602,11 +796,15 @@
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-(use-package tree-sitter) 
-(use-package tree-sitter-langs) 
-(require 'tree-sitter)
-(require 'tree-sitter-langs)
-(global-tree-sitter-mode)
+(use-package tree-sitter
+  :ensure t
+  :config
+  (global-tree-sitter-mode)
+  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)) 
+(use-package tree-sitter-langs
+  :after tree-sitter)
+
+(use-package yasnippet)
 
 (use-package term
   :commands term
